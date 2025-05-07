@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Web Serial 計量器通信</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    textarea { width: 100%; height: 120px; }
+    input { width: 80%; }
+  </style>
+</head>
+<body>
+  <h2>計量器 Web Serial 通信</h2>
+
+  <button id="connect">ポート連結</button>
+  <button id="disconnect" disabled>連結解除</button>
+
+  <h3>データ受信</h3>
+  <textarea id="receive" readonly></textarea>
+
+  <h3>データ転送</h3>
+  <input id="sendText" placeholder="命令語入力" />
+  <button id="send">転送</button>
+</body>
+<script src="test.js"></script>
+</html>
