@@ -6,55 +6,116 @@
  * 
  */
 
-let port;               // シリアルポート
-let reader;             // データ受信
-let writer;             // データ送信
-let keepReading = true; // 解除までにデータを受信する
+// * パラメータ整理
+let ports = [];
+let readers = [];
+let writers = [];
+let names = [];
+let currentPortIndex = null;
+let keepReading = false;
 
-// 《ポート連結》ボタン押下した時のイベント
+// * HTML要素参照
+const portList = document.getElementById("portList");
+const portNameInput = document.getElementById("portName");
+const disconnectBtn = document.getElementById("disconnect");
+const receiveArea = document.getElementById("receive");
+
+// *《ポート連結》ボタン押下した時のイベント
 document.getElementById("connect").addEventListener("click", async () => {
+    const name = portNameInput.value.trim();
+    if (!name) {
+        alert("ポート名を入力してください。");
+        return;
+    }
+
     try {
-        port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 9600 });
+        /**
+         * * 注意点
+         * * １．navigator.serial.requestPort()は既にユーザーが許可したポートのみ返還します。
+         * * ２．baudRate（ボーレート）はデータ転送される速度で、指定値は連結ポート設定と一致必須です。
+         */
+        const selectedPort = await navigator.serial.requestPort();
+        await selectedPort.open({ baudRate: 9600 });
 
-        writer = port.writable.getWriter();
-        reader = port.readable.getReader();
+        const index = ports.length;
+        ports.push(selectedPort);
+        writers[index] = selectedPort.writable.getWriter();
+        readers[index] = selectedPort.readable.getReader();
+        names[index] = name;
 
+        // * ポート名設定作業
+        const option = document.createElement("option");
+        option.value = index;
+        option.textContent = name;
+        portList.appendChild(option);
+        portList.value = index;
+
+        currentPortIndex = index;
+        disconnectBtn.disabled = false;
         keepReading = true;
-        readLoop();
 
-        document.getElementById("disconnect").disabled = false;
-        console.log("ポート連結済み");
+        readLoop(index);
+        console.log(`「${name}」ポート接続完了`);
     } catch (err) {
         console.error("連結エラー:", err);
     }
 });
-
-// 《連結解除》ボタン押下した時のイベント
-document.getElementById("disconnect").addEventListener("click", async () => {
-    keepReading = false;
-    if (reader) await reader.cancel();
-    if (reader) reader.releaseLock();
-    if (writer) writer.releaseLock();
-    await port.close();
-    console.log("ポート連結解除済み");
+// * ポート選択の場合
+portList.addEventListener("change", (e) => {
+    const idx = parseInt(e.target.value);
+    currentPortIndex = isNaN(idx) ? null : idx;
+    disconnectBtn.disabled = currentPortIndex == null;
 });
 
-// 《転送》ボタン押下した時のイベント
+// *《転送》ボタン押下した時のイベント
 document.getElementById("send").addEventListener("click", async () => {
+    if (currentPortIndex == null) return;
     const text = document.getElementById("sendText").value;
     const encoder = new TextEncoder();
-    await writer.write(encoder.encode(text + "\r\n")); // 計量器終了文字注意
+    await writers[currentPortIndex].write(encoder.encode(text + "\r\n"));
 });
 
+// *《連結解除》ボタン押下した時のイベント
+disconnectBtn.addEventListener("click", async () => {
+    if (currentPortIndex == null) return;
+    const port = ports[currentPortIndex];
+    const name = names[currentPortIndex];
 
-async function readLoop() {
+    try {
+        keepReading = false;
+
+        await readers[currentPortIndex].cancel();
+        readers[currentPortIndex].releaseLock();
+        writers[currentPortIndex].releaseLock();
+        await port.close();
+
+        // * UI 整理
+        const option = portList.querySelector(`option[value="${currentPortIndex}"]`);
+        if (option) portList.removeChild(option);
+
+        ports[currentPortIndex] = null;
+        readers[currentPortIndex] = null;
+        writers[currentPortIndex] = null;
+        names[currentPortIndex] = null;
+        currentPortIndex = null;
+
+        portList.value = "";
+        disconnectBtn.disabled = true;
+
+        console.log(`「${name}」ポート解除完了`);
+    } catch (e) {
+        console.log("ポート解除失敗", e);
+    }
+});
+
+// * 受信ループ
+async function readLoop(index) {
     const decoder = new TextDecoder();
-    while (keepReading) {
+    while (keepReading && readers[index]) {
         try {
-            const { value, done } = await reader.read();
+            const { value, done } = await readers[index].read();
             if (done) break;
-            document.getElementById("receive").value += decoder.decode(value);
+            receiveArea.value += decoder.decode(value);
         } catch (error) {
             console.error("受信エラー:", error);
             break;

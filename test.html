@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <title>Web Serial 計量器通信</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    textarea { width: 100%; height: 120px; }
-    input { width: 80%; }
-  </style>
+  <link rel="stylesheet" href="test.css">
 </head>
 <body>
   <h2>計量器 Web Serial 通信</h2>
 
-  <!-- TODO. ポート選択及びステータス表示 -->
-  <h3>ポート選択</h3>
-  <select id="portList"></select>
+  <!-- * ポート連結制御 -->
+  <h3>ポート登録・選択</h3>
+  <input id="portName" placeholder="接続名を入力（例：計量器1）" />
   <button id="connect">ポート連結</button>
+  <br><br>
+  <select id="portList"></select>
   <button id="disconnect" disabled>連結解除</button>
 
+  <!-- * 受信 -->
   <h3>データ受信</h3>
   <textarea id="receive" readonly></textarea>
 
+  <!-- * 送信 -->
   <h3>データ転送</h3>
   <input id="sendText" placeholder="送信データ入力" />
   <button id="send">転送</button>
