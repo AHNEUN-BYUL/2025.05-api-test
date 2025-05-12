@@ -12,6 +12,9 @@
 <body>
   <h2>計量器 Web Serial 通信</h2>
 
+  <!-- TODO. ポート選択及びステータス表示 -->
+  <h3>ポート選択</h3>
+  <select id="portList"></select>
   <button id="connect">ポート連結</button>
   <button id="disconnect" disabled>連結解除</button>
 
@@ -19,7 +22,7 @@
   <textarea id="receive" readonly></textarea>
 
   <h3>データ転送</h3>
-  <input id="sendText" placeholder="命令語入力" />
+  <input id="sendText" placeholder="送信データ入力" />
   <button id="send">転送</button>
 </body>
 <script src="test.js"></script>
